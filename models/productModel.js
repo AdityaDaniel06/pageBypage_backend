@@ -20,6 +20,13 @@ const productSchema = new mongoose.Schema({
   year: {
     type: Number,
   },
+  binding: {
+    type: String,
+  },
+  language: {
+    type: String,
+    // required: [true, "A Book should have a language"],
+  },
   rating: { type: Number, default: 4.5 },
   isSeries: { type: Boolean, default: false },
   category: {
