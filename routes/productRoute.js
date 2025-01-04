@@ -9,4 +9,7 @@ route.get("/productDetail", productController.productDetail);
 route.get("/showbooks", productController.getProductByCategory);
 route.get("/searchProduct", productController.searchProduct);
 
+route.post("/order", productController.order);
+route.post("verify", productController.verify);
+
 module.exports = route;

@@ -36,7 +36,7 @@ const productSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true,
-    // required: [true, "A tour must have a description"],
+    // required: [true, "A book must have a description"],
   },
   price: {
     type: Number,
@@ -58,6 +58,10 @@ const productSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now(),
+  },
+  inStock: {
+    type: Boolean,
+    default: true,
   },
 });
 
