@@ -21,6 +21,16 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 4,
   },
+  // passwordConfirm: {
+  //   type: String,
+  //   required: true,
+  //   validate: {
+  //     validator: function (el) {
+  //       return el === this.password;
+  //     },
+  //     message: "Passwords are not the same",
+  //   },
+  // },
   isVerfied: {
     type: Boolean,
     default: false,
@@ -34,5 +44,6 @@ const userSchema = new mongoose.Schema({
   forgotPasswordExpiry: Date,
   passwordResetToken: String,
   passwordResetTokenExpiry: Date,
+  changedPasswordAt: Date,
 });
 module.exports = mongoose.model("user", userSchema);

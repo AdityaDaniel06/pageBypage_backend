@@ -8,6 +8,6 @@ route.post("/login", authController.login);
 
 route.post("/forgotPassword", authController.forgotPassword);
 
-route.post("/resetPassword/:token", authController.resetPassword);
+route.patch("/resetPassword/:token", authController.resetPassword);
 
 module.exports = route;

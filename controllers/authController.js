@@ -63,7 +63,6 @@ const login = async (req, res) => {
     const tokenData = {
       id: user._id,
       email: user.email,
-      username: user.username,
     };
     const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
@@ -102,8 +101,9 @@ const forgotPassword = async (req, res, next) => {
     "host"
   )}/user/resetPassword/${resetToken}`;
 
-  const message = `Forgot your password? Login with your new password and passwordConfirm to: ${resetURL}.\n
-      If you didn't forget your password, please ignore this email!`;
+  const message = `Forgot your password? Login with your new password and passwordConfirm to: 
+  ${resetURL}.
+  If you didn't forget your password, please ignore this email!`;
 
   try {
     await sendEmail({
@@ -123,11 +123,46 @@ const forgotPassword = async (req, res, next) => {
 };
 
 const resetPassword = async (req, res, next) => {
-  try {
-  } catch (error) {
-    console.error(error);
-    res.status(404).json({ status: "fail", message: error });
+  // 1) Get user based on the token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await USER.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetTokenExpiry: { $gt: Date.now() },
+  });
+
+  // 2) if token has not been expired, and there is user , SET NEW PASSWORD
+  if (!user) {
+    return res
+      .status(400)
+      .json({ status: "fail", message: "Token is invalid or has expired" });
   }
+  // hashing password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(req.body.password, salt);
+  user.password = hashedPassword;
+  // user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpiry = undefined;
+  await user.save();
+
+  // 3) Update changedPasswordAt property for the user
+  // 4) Log the user in, send JWT
+  // generate JWT token
+  const tokenData = {
+    id: user._id,
+    email: user.email,
+  };
+  const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+  res.status(200).json({
+    status: "success",
+    token,
+  });
 };
 
 module.exports = {
