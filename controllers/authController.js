@@ -1,6 +1,9 @@
 const USER = require("../models/userModel");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../utils/email");
+const { clear } = require("console");
 
 const signup = async (req, res) => {
   try {
@@ -76,7 +79,60 @@ const login = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res, next) => {
+  // 1) Get user based in POST email
+  const user = await USER.findOne({ email: req.body.email });
+  if (!user) {
+    return res
+      .status(404)
+      .json({ status: "fail", message: "No user found with that email" });
+  }
+  // 2) generate a random reset token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  // 3) hash the reset token and set it to the user's passwordResetToken field
+  user.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  user.passwordResetTokenExpiry = Date.now() + 10 * 60 * 1000;
+  await user.save({ validateBeforeSave: false }); // Disable validation to allow partial updates
+
+  // 4) send plane token to user's email
+  const resetURL = `${req.protocol}://${req.get(
+    "host"
+  )}/user/resetPassword/${resetToken}`;
+
+  const message = `Forgot your password? Login with your new password and passwordConfirm to: ${resetURL}.\n
+      If you didn't forget your password, please ignore this email!`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Reset Password",
+      message: message,
+    });
+    res.status(200).json({
+      status: "success",
+      message: "Reset password email sent to your email",
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ status: "fail", message: error });
+  }
+};
+
 module.exports = {
   signup,
   login,
+  forgotPassword,
+  resetPassword,
 };
