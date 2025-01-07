@@ -46,4 +46,11 @@ const userSchema = new mongoose.Schema({
   passwordResetTokenExpiry: Date,
   changedPasswordAt: Date,
 });
+
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew) return next();
+  this.changedPasswordAt = Date.now() - 1000;
+  next();
+});
+
 module.exports = mongoose.model("user", userSchema);

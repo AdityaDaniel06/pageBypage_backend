@@ -163,6 +163,21 @@ const resetPassword = async (req, res, next) => {
     status: "success",
     token,
   });
+
+  res.cookie("jwt", token, {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    // secure: true,
+    httpOnly: true,
+  });
+};
+
+const updatePassword = async (req, res, next) => {
+  // 1) Get user from the collection
+  // 2) Check if POSTed current password is correct
+  // 3) If so, update password
+  // 4) Log user in, send JWT
 };
 
 module.exports = {
@@ -170,4 +185,5 @@ module.exports = {
   login,
   forgotPassword,
   resetPassword,
+  updatePassword,
 };
