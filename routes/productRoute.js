@@ -1,15 +1,21 @@
 const express = require("express");
-const route = express.Router();
+const router = express.Router();
 const productController = require("../controllers/productController");
+const authController = require("../controllers/authController");
 
-route.post("/addProduct", productController.addProduct);
+// only admin can add books
+router.post("/addProduct", productController.addProduct);
 
-route.get("/getAllProducts", productController.getAllProducts);
-route.get("/productDetail", productController.productDetail);
-route.get("/showbooks", productController.getProductByCategory);
-route.get("/searchProduct", productController.searchProduct);
+router.get(
+  "/getAllProducts",
+  authController.protect,
+  productController.getAllProducts
+);
+router.get("/productDetail", productController.productDetail);
+router.get("/showbooks", productController.getProductByCategory);
+router.get("/searchProduct", productController.searchProduct);
 
-route.post("/order", productController.order);
-route.post("verify", productController.verify);
+router.post("/order", authController.protect, productController.order);
+router.post("verify", productController.verify);
 
-module.exports = route;
+module.exports = router;

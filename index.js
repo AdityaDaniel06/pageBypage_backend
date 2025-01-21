@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const app = express();
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -14,6 +15,12 @@ dotenv.config({ path: "./config.env" });
 // BODY-PARSER, reading data from body into req.body
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Set Pug as the template engine
+app.set("view engine", "pug");
+
+// Set the views directory
+app.set("views", path.join(__dirname, "views"));
 
 //Data sanitization against NoSQL query injection
 const mongoSanitize = require("express-mongo-sanitize");

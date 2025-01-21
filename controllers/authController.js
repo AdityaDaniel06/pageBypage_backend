@@ -2,8 +2,8 @@ const USER = require("../models/userModel");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const sendEmail = require("../utils/email");
-const { clear } = require("console");
+const { promisify } = require("util");
+const Email = require("../utils/email");
 
 const signup = async (req, res) => {
   try {
@@ -34,6 +34,8 @@ const signup = async (req, res) => {
       message: "Account Created Successfully",
       data: savedUser,
     });
+    const url = `${req.protocol}://${req.get("host")}/user/me`;
+    await new Email(newUser, url).sendWelcomeEmail();
   } catch (err) {
     console.error(err);
     res.status(404).json({ status: "fail", message: err });
@@ -70,6 +72,13 @@ const login = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Logged in successfully",
+      data: {
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        role: user.role,
+      },
+
       token,
     });
   } catch (err) {
@@ -96,21 +105,12 @@ const forgotPassword = async (req, res, next) => {
   user.passwordResetTokenExpiry = Date.now() + 10 * 60 * 1000;
   await user.save({ validateBeforeSave: false }); // Disable validation to allow partial updates
 
-  // 4) send plane token to user's email
-  const resetURL = `${req.protocol}://${req.get(
-    "host"
-  )}/user/resetPassword/${resetToken}`;
-
-  const message = `Forgot your password? Login with your new password and passwordConfirm to: 
-  ${resetURL}.
-  If you didn't forget your password, please ignore this email!`;
-
   try {
-    await sendEmail({
-      email: user.email,
-      subject: "Reset Password",
-      message: message,
-    });
+    // 4) send plane token to user's email
+    const resetURL = `${req.protocol}://${req.get(
+      "host"
+    )}/user/resetPassword/${resetToken}`;
+    await new Email(user, resetURL).sendResetPasswordEmail();
     res.status(200).json({
       status: "success",
       message: "Reset password email sent to your email",
@@ -159,17 +159,16 @@ const resetPassword = async (req, res, next) => {
   const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
-  res.status(200).json({
-    status: "success",
-    token,
-  });
-
   res.cookie("jwt", token, {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     // secure: true,
     httpOnly: true,
+  });
+  res.status(200).json({
+    status: "success",
+    token,
   });
 };
 
@@ -180,10 +179,36 @@ const updatePassword = async (req, res, next) => {
   // 4) Log user in, send JWT
 };
 
+const protect = async (req, res, next) => {
+  let token;
+  //1) checking of token exists
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+    // console.log("token: " + token);
+    if (!token) {
+      return next(
+        res
+          .status(401)
+          .json({ status: "fail", message: "You are not logged in!" })
+      );
+    }
+  }
+  //2) Check if token is valid(verfication)
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log(decoded);
+  //3) Check of user exists
+  //4) if user changed password after token was issued
+  next();
+};
+
 module.exports = {
   signup,
   login,
   forgotPassword,
   resetPassword,
   updatePassword,
+  protect,
 };
