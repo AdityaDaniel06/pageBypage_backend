@@ -36,7 +36,7 @@ app.use(hpp());
 // app.use(hpp({whitelist: ['']}));
 
 const port = process.env.PORT || 3000;
-mongoose.connect(process.env.DATABASE_LOCAL).then(() => {
+mongoose.connect(process.env.DATABASE_ATLAS).then(() => {
   console.log("MongoDB Connect");
 });
 
