@@ -4,7 +4,7 @@ const PRODUCTMODEL = require("../models/productModel");
 const PAYMENTMODEL = require("../models/paymentModel");
 
 const addProduct = async (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   try {
     // console.log("sssssss", req.body);
     const newBook = await PRODUCTMODEL.create({
